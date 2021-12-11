@@ -1,0 +1,18 @@
+{
+  "name": "apirest-blog-viajes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "apiapp.js",
+  "scripts": {
+    "dev": "nodemon apiapp.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mysql2": "^2.3.2",
+    "nodemon": "^2.0.14"
+  }
+}
