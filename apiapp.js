@@ -133,6 +133,110 @@ app.get('/api/v1/autores/:id', function(peticion, respuesta) {
   
 })
 
+app.post('/api/v1/autores/', function(peticion, respuesta) {
+  
+  pool.getConnection(function(err, connection) {
+
+    const email = peticion.body.email
+    const pseudonimo = peticion.body.pseudonimo
+    const contrasena = peticion.body.contrasena
+
+    const consultaEmail = `
+      SELECT * FROM autores
+      WHERE email = ${connection.escape(email)}
+    `
+    connection.query(consultaEmail, function (error, filas, campos) {
+      if (filas.length > 0) {
+        respuesta.send({errors: ["Email de usuario duplicado"]})
+      }
+      else {
+        const consultaPseudonimo = `
+          SELECT * FROM autores
+          WHERE pseudonimo = ${connection.escape(pseudonimo)}
+        `
+        connection.query(consultaPseudonimo, function (error, filas, campos) {
+          if (filas.length > 0) {
+            respuesta.send({errors: ["Pseudonimo de usuario duplicado"]})
+          }
+          else {
+            const consulta = `
+              INSERT INTO autores
+              (email, contrasena, pseudonimo)
+              VALUES (
+                ${connection.escape(email)},
+                ${connection.escape(contrasena)},
+                ${connection.escape(pseudonimo)}
+              )
+            `
+            connection.query(consulta, function (error, filas, campos) {
+              const nuevoId = filas.insertId
+              const queryConsulta = `SELECT * FROM autores WHERE id = ${connection.escape(nuevoId)}`
+              connection.query(queryConsulta, function(error, filas, campos) {
+                respuesta.status(201)
+                respuesta.json({data: filas[0]})
+              })
+            })
+          }
+        })
+      }
+    })
+    connection.release()
+
+  })
+  
+})
+
+app.post('/api/v1/publicaciones/', function(peticion, respuesta) {
+
+  const email = peticion.query.email
+  const contrasena = peticion.query.contrasena
+  const titulo = peticion.body.titulo
+  const resumen = peticion.body.resumen
+  const contenido = peticion.body.contenido
+
+  pool.getConnection((err, connection) => {
+    const date = new Date()
+    const fecha = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`
+    const consultaAccesoUsuario = `
+      SELECT *
+      FROM autores
+      WHERE
+      email = ${connection.escape(email)} AND
+      contrasena = ${connection.escape(contrasena)}
+    `
+    connection.query(consultaAccesoUsuario, (error, filas, campos) => {
+      if (filas.length <= 0) {
+        respuesta.status(404)
+        respuesta.send({ errors: ["Credenciales invalidas"] })
+      } else {
+        let usuario = filas[0]
+        const consulta = `
+          INSERT INTO
+          publicaciones
+          (titulo, resumen, contenido, autor_id, fecha_hora)
+          VALUES (
+            ${connection.escape(titulo)},
+            ${connection.escape(resumen)},
+            ${connection.escape(contenido)},
+            ${connection.escape(usuario.id)},
+            ${connection.escape(fecha)}
+          )
+        `
+        connection.query(consulta, (error, filas, campos) => {
+          const nuevoId = filas.insertId
+          const queryConsulta = `SELECT * FROM publicaciones WHERE id=${connection.escape(nuevoId)}`
+          connection.query(queryConsulta, function(error, filas, campos) {
+            respuesta.status(201)
+            respuesta.json({data: filas[0]})
+          })
+        })
+      }
+    })
+    connection.release()
+  })
+
+})
+
 app.listen(8000, function(){
   console.log("Servidor iniciado");
 })
