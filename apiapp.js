@@ -237,6 +237,53 @@ app.post('/api/v1/publicaciones/', function(peticion, respuesta) {
 
 })
 
+app.delete('/api/v1/publicaciones/:id', function(peticion, respuesta) {
+
+  pool.getConnection((err, connection) => {
+    const email = peticion.query.email.toLowerCase().trim()
+    const contrasena = peticion.query.contrasena
+    const id_publicacion = peticion.params.id
+    const consultaAccesoUsuario = `
+      SELECT *
+      FROM autores
+      WHERE
+      email = ${connection.escape(email)} AND
+      contrasena = ${connection.escape(contrasena)}
+    `
+    connection.query(consultaAccesoUsuario, (error, filas, campos) => {
+      if (filas.length <= 0) {
+        respuesta.status(404)
+        respuesta.send({ errors: ["Credenciales invalidas"] })
+      } else {
+        let usuario = filas[0]
+        const consultaPublicacionUsuario = `
+          SELECT * FROM publicaciones WHERE
+          id = ${connection.escape(id_publicacion)} AND
+          autor_id = ${connection.escape(usuario.id)}
+        `
+        connection.query(consultaPublicacionUsuario, (error, filas, campos) => {
+          if (filas.length <= 0) {
+            respuesta.status(404)
+            respuesta.send({ errors: ["La publicacion no existe o no pertenece al usuario"] })
+          } else {
+            const consultaBorrar = `
+              DELETE FROM publicaciones WHERE
+              id = ${connection.escape(id_publicacion)} AND
+              autor_id = ${connection.escape(usuario.id)}
+            `
+            connection.query(consultaBorrar, (error, filas, campos) => {
+              respuesta.status(204)
+              respuesta.json()
+            })
+          }
+        })
+      }
+    })
+    connection.release()
+  })
+
+})
+
 app.listen(8000, function(){
   console.log("Servidor iniciado");
 })
