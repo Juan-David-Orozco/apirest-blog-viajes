@@ -2,13 +2,14 @@ const express = require('express')
 const app = express()
 const mysql = require('mysql2')
 const bodyParser = require('body-parser')
+const { db, PORT } = require('./config')
 
 var pool = mysql.createPool({
   connectionLimit : 20,
-  host      : 'localhost',
-  user      : 'root',
-  password  : 'juan',
-  database  : 'blog_viajes'
+  host      : db.host,
+  user      : db.user,
+  password  : db.password,
+  database  : db.database
 });
 
 app.use(bodyParser.json());
@@ -284,6 +285,6 @@ app.delete('/api/v1/publicaciones/:id', function(peticion, respuesta) {
 
 })
 
-app.listen(8000, function(){
-  console.log("Servidor iniciado");
+app.listen(PORT, function(){
+  console.log("Servidor iniciado, PORT:", PORT);
 })
